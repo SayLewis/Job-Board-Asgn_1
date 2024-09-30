@@ -22,6 +22,13 @@ def get_jobs_by_name(jobName):
     jobs = Job.query.filter(Job.jobName == jobName).all()
     return jobs
 
+def get_all_jobs_json():
+    jobs = Job.query.all()
+    if not jobs:
+        return []
+    jobs_json = [job.get_json() for job in jobs]
+    return jobs_json
+
 # Get All Jobs
 def get_all_jobs():
     jobs = Job.query.all()

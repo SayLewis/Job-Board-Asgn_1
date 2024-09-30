@@ -4,9 +4,8 @@ from flask.cli import with_appcontext, AppGroup
 
 from App.database import db, get_migrate
 from App.models import User
-
 from App.main import create_app
-from App.controllers import * #(create_user, get_all_users_json, get_all_users, initialize)
+from App.controllers import (create_user, get_all_users_json, get_all_users, initialize,add_job,get_all_jobs,get_all_jobs_json,get_job_by_id,update_job,delete_job,get_jobs_by_name,add_applicant,get_all_applicants,get_applicants_by_job,)
 
 
 
@@ -96,8 +95,23 @@ def delete_job_command(jobid):
 @job_cli.command("list", help="Lists all jobs that were added to the application")
 def list_jobs_command():
     jobs = get_all_jobs()
-    for job in jobs:
-        print(job.get_json())
+    if jobs:
+        for job in jobs:
+            print(job.get_json())  # Use the get_json method for each job
+    else:
+        print("No jobs found.")
+
+@job_cli.command("list", help="Lists jobs in the database")
+@click.argument("format", default="string")
+def list_jobs_command(format):
+    if format == 'string':
+        jobs = get_all_jobs()
+        for job in jobs:
+            print(f"JobID: {job.jobID}, JobName: {job.jobName}, JobDetails: {job.jobDetails}, PostedDate: {job.postedDate}")
+    else:
+        jobs_json = get_all_jobs_json()
+        print(jobs_json)
+
 
 # This command will be: flask job list_by_id 1
 @job_cli.command("list_by_id", help="Lists a job by its ID")
@@ -123,10 +137,49 @@ def list_jobs_by_name_command(jobname):
 app.cli.add_command(job_cli)  # Add the job group to the CLI
 
 
+'''
+Applicant Commands
+'''
 
+applicant_cli = AppGroup('applicant', help='Applicant object CLI commands')
 
+# Add Applicant
+@applicant_cli.command("add", help="Adds an applicant for a job")
+@click.argument("name")
+@click.argument("email")
+@click.argument("resume")
+@click.argument("jobID")
+def add_applicant_command(name, email, resume, jobid):
+    success, message = add_applicant(name, email, resume, jobid)
+    if success:
+        print("Applicant added:", message)
+    else:
+        print("Error:", message)
 
+# List all applicants
+@applicant_cli.command("list", help="Lists all applicants")
+def list_applicants_command():
+    applicants = get_all_applicants()
+    print(applicants)
 
+# List applicants by job
+@applicant_cli.command("list_by_job", help="Lists applicants by job ID")
+@click.argument("jobID")
+def list_applicants_by_job_command(jobid):
+    applicants = get_applicants_by_job(jobid)
+    print(applicants)
+
+app.cli.add_command(applicant_cli)
+
+@job_cli.command("view_applicants", help="View applicants for a specific job")
+@click.argument("jobID")
+def view_job_applicants_command(jobid):
+    applicants = get_applicants_by_job(jobid)
+    if applicants:
+        for applicant in applicants:
+            print(f"ApplicantID: {applicant['ApplicantID']}, Name: {applicant['Name']}, Email: {applicant['Email']}, Resume: {applicant['Resume']}, AppliedDate: {applicant['AppliedDate']}")
+    else:
+        print("No applicants found for this job.")
 
 
 '''
